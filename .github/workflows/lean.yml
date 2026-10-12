@@ -1,0 +1,51 @@
+name: Lean build
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+defaults:
+  run:
+    shell: bash -o pipefail {0}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install elan
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Fetch Mathlib cache
+        working-directory: A245995
+        run: lake exe cache get
+      - name: Clean build
+        working-directory: A245995
+        run: lake build 2>&1 | tee build_ci.txt
+      - name: Axiom report
+        working-directory: A245995
+        run: lake env lean Axioms.lean 2>&1 | tee axioms_ci.txt
+      - name: No sorry in sources
+        run: "! grep -rnw 'sorry' A245995/A245995 --include=*.lean"
+      - name: No sorry warnings in build
+        run: "! grep -n \"declaration uses 'sorry'\" A245995/build_ci.txt"
+      - name: Axiom whitelist
+        run: bash scripts/check_axioms.sh A245995/axioms_ci.txt
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "## Machine-check attestation"
+            echo "Commit: \`$GITHUB_SHA\`"
+            echo "### #print axioms"
+            echo '```'; cat A245995/axioms_ci.txt 2>/dev/null; echo '```'
+            echo "### Build log (last 40 lines)"
+            echo '```'; tail -n 40 A245995/build_ci.txt 2>/dev/null; echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload attestation artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lean-attestation
+          path: |
+            A245995/build_ci.txt
+            A245995/axioms_ci.txt

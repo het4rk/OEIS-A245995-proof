@@ -1,0 +1,15 @@
+.lake/
+A245995/.lake/
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.fdb_latexmk
+paper/*.fls
+build_ci.txt
+axioms_ci.txt
+*.aux
+*.log
+*.out
+*.fls
+*.fdb_latexmk
+*.synctex.gz
