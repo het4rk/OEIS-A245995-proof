@@ -1,0 +1,120 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs,tabularx}
+\usepackage[hidelinks]{hyperref}
+\usepackage{url}
+\usepackage{array}
+\def\UrlBreaks{\do0\do1\do2\do3\do4\do5\do6\do7\do8\do9\do a\do b\do c\do d\do e\do f\do/\do.\do-}
+\emergencystretch=3em
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\theoremstyle{remark}\newtheorem{remark}[theorem]{Remark}
+\newcommand{\lean}[1]{{\ttfamily\def\_{\textunderscore\allowbreak}\def\/{/\allowbreak}#1}}
+\author{Hetark Shah, AI-assisted by Grok}
+\date{October 12, 2026}
+\title{A proof of Hardin's empirical column recurrences for OEIS A245995, formalized in Lean~4}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Let $T(n,k)$ be the number of arrays of length $n+2$ over $\{0,\dots,k\}$ in which no two entries among any three consecutive terms sum to exactly $k$ (OEIS A245995~\cite{oeis}). R.~H.~Hardin recorded nine column recurrences, for $k=1,\dots,9$, labelled ``Empirical'' in the OEIS. We prove a uniform statement for every $k$: for odd $k$, $T(n+2,k)=(k-1)T(n+1,k)+T(n,k)$; for even $k\ge2$, $T(n+4,k)=(k-2)T(n+3,k)+T(n+2,k)+(k-1)^2T(n+1,k)+(k-1)T(n,k)$; and for $k=2$ the shorter $T(n+3,2)=T(n+2,2)+T(n,2)$. All nine of Hardin's formulas follow. The proof is a short transfer-matrix argument on four pair types and is machine-checked in Lean~4 with Mathlib~\cite{mathlib}: no \texttt{sorry}, and only the axioms \texttt{propext}, \texttt{Classical.choice} and \texttt{Quot.sound}.
+\end{abstract}
+
+\section{Introduction}
+OEIS A245995 (R.~H.~Hardin, 2014) tabulates $T(n,k)$, the number of words $w_1\cdots w_{n+2}$ over $\{0,\dots,k\}$ with $w_i+w_j\ne k$ whenever $1\le j-i\le2$. The entry lists, as ``Empirical for column $k$'',
+\begin{align*}
+k=1&: a(n)=a(n-1), & k=2&: a(n)=a(n-1)+a(n-3),\\
+k=3&: a(n)=2a(n-1)+a(n-2), & k=4&: a(n)=2a(n-1)+a(n-2)+9a(n-3)+3a(n-4),\\
+k=5&: a(n)=4a(n-1)+a(n-2), & k=6&: a(n)=4a(n-1)+a(n-2)+25a(n-3)+5a(n-4),\\
+k=7&: a(n)=6a(n-1)+a(n-2), & k=8&: a(n)=6a(n-1)+a(n-2)+49a(n-3)+7a(n-4),\\
+k=9&: a(n)=8a(n-1)+a(n-2). &&
+\end{align*}
+We prove these together with the evident pattern for all $k$.
+
+\section{Related work}
+The table and its column recurrences were contributed by Hardin in 2014~\cite{oeis}. Columns $k=2,\dots,7$ are the separate entries A245989--A245994~\cite{oeiscols}. Colin Barker (2018) and R.~J.~Mathar (2014) added conjectured generating functions to several of these columns, still marked as conjectures or ``Empirical''~\cite{oeiscols}. Column $2$ (A245989) states its recurrence for $n\ge5$ without the ``Empirical'' label. Row~$1$ (A245996, length-$3$ arrays) was proved by Pontus von Br\"omssen in 2022 by inclusion--exclusion~\cite{row1}. To our knowledge no proof of the general column recurrences had been published; an OEIS and web search on October 12, 2026 found none. Counting words that avoid a finite set of local patterns by a transfer matrix is classical (see e.g.\ Stanley~\cite{stanley}, \S4.7), so the method is standard; what is new is the four-state reduction that works uniformly in $k$, and the machine-checked proof. The formalization uses Lean~4~\cite{lean4} and Mathlib~\cite{mathlib}.
+
+\section{Statement}
+\begin{theorem}\label{thm:main}
+For all $n\ge0$:
+\begin{enumerate}
+\item if $k$ is odd, $T(n+2,k)=(k-1)T(n+1,k)+T(n,k)$;
+\item if $k\ge2$ is even, $T(n+4,k)=(k-2)T(n+3,k)+T(n+2,k)+(k-1)^2T(n+1,k)+(k-1)T(n,k)$;
+\item $T(n+3,2)=T(n+2,2)+T(n,2)$ and $T(n+1,1)=T(n,1)$.
+\end{enumerate}
+Here $T(0,k)$ counts words of length $2$.
+\end{theorem}
+\begin{corollary}\label{cor:cols}
+All nine of Hardin's column recurrences hold for every $n$ at which they are defined (OEIS offset $n\ge1$).
+\end{corollary}
+
+\section{Proof}
+Write $\bar a=k-a$, so a pair is \emph{forbidden} iff $y=\bar x$. Let $\varepsilon=1$ if $k$ is even and $0$ otherwise; when $k$ is even, $h=k/2$ is the unique letter with $\bar h=h$. Let $N_L(x,y)$ be the number of good words of length $L+2$ beginning $x,y$.
+
+\textbf{Step 1 (prepending a letter).} A word $c\,v$ is good iff $v$ is good and $c+v_1\ne k$, $c+v_2\ne k$. Hence
+\[N_{L+1}(c,b)=[\,b\ne\bar c\,]\sum_{a\ne\bar c}N_L(b,a).\]
+
+\textbf{Step 2 (four types).} Call a non-forbidden pair $(x,y)$ of type $E$ if $x=y$, $P$ if $x=h$, $Q$ if $y=h$, and $D$ otherwise. We claim $N_L(x,y)$ equals $E_L,P_L,Q_L,D_L$ according to the type (and $0$ if forbidden), where $E_0=D_0=P_0=Q_0=1$ and, with
+\[R_L=E_L+\varepsilon Q_L+(k-1-\varepsilon)D_L,\]
+\[E_{L+1}=R_L,\quad D_{L+1}=R_L-D_L,\quad P_{L+1}=R_L-Q_L,\quad Q_{L+1}=(k-1)P_L.\]
+Indeed, for $b\ne h$ the row sum $\sum_a N_L(b,a)$ is $R_L$: the column $a=\bar b$ contributes $0$, $a=b$ contributes $E_L$, $a=h$ (if it exists) contributes $Q_L$, and the remaining $k-1-\varepsilon$ letters contribute $D_L$ each. For $b=h$ the row sum is $kP_L$. By Step~1, $N_{L+1}(c,b)$ is the row sum of $b$ minus the single term $N_L(b,\bar c)$, and a check of the four cases gives the recursion above. For example, if $c=h\ne b$ then $N_L(b,\bar c)=N_L(b,h)=Q_L$; if $b=h\ne c$ then $kP_L-P_L=(k-1)P_L$.
+
+\textbf{Step 3 (total).} Summing rows, $T(L,k)=\varepsilon kP_L+(k+1-\varepsilon)R_L$.
+
+\textbf{Step 4 (recurrences).} The vector $(E,D,P,Q)$ evolves by a fixed linear map $M$. Theorem~\ref{thm:main} is the statement that the linear functional $T$ annihilates $M^2-(k-1)M-I$ (odd $k$, where $\varepsilon=0$ and only $E,D$ enter), $M^4-(k-2)M^3-M^2-(k-1)^2M-(k-1)I$ (even $k$), and $M^3-M^2-I$ (at $k=2$). Each is a polynomial identity in $k,E,D,P,Q$, verified by direct expansion (in Lean, by \texttt{ring}). Corollary~\ref{cor:cols} is the specialisation $k=1,\dots,9$, shifted to the OEIS indexing.
+
+\textbf{Numerical check.} The recursion reproduces all $9999$ terms of Hardin's b-file.
+
+\section{Formalization}
+All declarations are in namespace \lean{A245995}; see Table~\ref{tab:lean}.
+\begin{table}[ht]
+\centering
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+Lean name (file) & Statement \\
+\midrule
+\lean{Good}, \lean{T}, \lean{N} (\lean{Basic.lean}) & OEIS condition (as natural-number sums); $T(n,k)$; $N_L(x,y)$ \\
+\lean{good\_cons}, \lean{N\_succ} & Step~1 \\
+\lean{typ}, \lean{V}, \lean{row\_sum}, \lean{N\_eq\_typ} (\lean{Types.lean}) & Step~2 \\
+\lean{T\_eq\_sum}, \lean{T\_eq\_F} (\lean{Main.lean}) & Step~3 \\
+\lean{T\_odd}, \lean{T\_even}, \lean{T\_two}, \lean{T\_one} & Theorem~\ref{thm:main} \\
+\lean{T\_col1}, \dots, \lean{T\_col9} & Corollary~\ref{cor:cols}, verbatim OEIS form \\
+\lean{Values.lean} & kernel-checked values $T(1,2)=8$, $T(2,3)=68$, $T(0,4)=20$ \\
+\bottomrule
+\end{tabularx}
+\caption{Theorems and their Lean names.}\label{tab:lean}
+\end{table}
+
+\section{Reproducibility}
+\begin{itemize}
+\item Source code: \url{https://github.com/het4rk/OEIS-A245995-proof}. The Lean project is in \texttt{A245995/}.
+\item Toolchain: \texttt{leanprover/lean4:v4.35.0-rc4}. Mathlib: tag \texttt{v4.35.0-rc4}, commit \nolinkurl{1f414401f69059aa7eead47b53ee40bd38455eeb}, pinned in \texttt{lake-manifest.json}.
+\item Build:
+\begin{verbatim}
+cd A245995
+lake exe cache get
+lake build
+lake env lean Axioms.lean
+\end{verbatim}
+\item Axioms: every theorem listed in \texttt{Axioms.lean} (\lean{T\_odd}, \lean{T\_even}, \lean{T\_two}, \lean{T\_one}, \lean{T\_col1}--\lean{T\_col9}) depends only on \texttt{propext}, \texttt{Classical.choice} and \texttt{Quot.sound}.
+\item Attestation: \texttt{verification/} contains the build log, the axiom output and \texttt{VERIFICATION.md} with toolchain details and SHA-256 hashes of the Lean sources. Continuous integration rebuilds on every push, rejects \texttt{sorry} and non-standard axioms, and uploads the logs as artifacts.
+\end{itemize}
+
+\section{Limitations}
+The argument is a routine transfer-matrix computation; its interest is that it settles a family of empirical OEIS formulas uniformly in $k$, with a machine-checked proof. We do not formalize Hardin's empirical \emph{row} recurrences (fixed $n$, varying $k$), apart from row~$1$, which was already proved~\cite{row1} and is not restated here. We do not prove that the recurrences are of minimal order for every $k$, nor the conjectured generating functions, although these follow from the recurrences and initial terms.
+
+\begin{thebibliography}{9}
+\bibitem{oeis} R.~H.~Hardin, \emph{A245995: $T(n,k)$ = number of length $n+2$ $0..k$ arrays with no pair in any consecutive three terms totalling exactly $k$}, The On-Line Encyclopedia of Integer Sequences, 2014, \url{https://oeis.org/A245995}.
+\bibitem{oeiscols} R.~H.~Hardin, C.~Barker, R.~J.~Mathar, \emph{A245989, A245990, A245991, A245992, A245993, A245994} (columns $k=2,\dots,7$ of A245995), The On-Line Encyclopedia of Integer Sequences, \url{https://oeis.org/A245990}.
+\bibitem{row1} P.~von Br\"omssen, proof in \emph{A245996} (row~1 of A245995), The On-Line Encyclopedia of Integer Sequences, 2022, \url{https://oeis.org/A245996}.
+\bibitem{stanley} R.~P.~Stanley, \emph{Enumerative Combinatorics, Vol.~1}, 2nd ed., Cambridge University Press, 2012.
+\bibitem{mathlib} The mathlib Community, \emph{The Lean mathematical library}, in Proc.\ CPP 2020, ACM, 367--381.
+\bibitem{lean4} L.~de Moura, S.~Ullrich, \emph{The Lean 4 theorem prover and programming language}, in CADE-28, LNCS 12699, Springer, 2021, 625--635.
+\end{thebibliography}
+\end{document}
