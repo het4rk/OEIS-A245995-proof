@@ -1,6 +1,6 @@
-⚠ [9020/9025] Built A245995.Basic (22s)
+⚠ [9020/9025] Built A245995.Basic (12s)
 warning: A245995/Basic.lean: imports `Mathlib` from package `mathlib`, which is designed for use with the module system; consider adding `module` to the start of this file
-⚠ [9021/9025] Built A245995.Types (22s)
+⚠ [9021/9025] Built A245995.Types (6.3s)
 warning: A245995/Types.lean:84:17: This simp argument is unused:
   or_assoc
 
@@ -24,7 +24,7 @@ warning: A245995/Types.lean:180:27: `if_false` has been deprecated: Use `ite_fal
 
 Hint: Replace the deprecated name:
   i̵f̵_̵f̵a̵l̵s̵e̵i̲t̲e̲_̲f̲a̲l̲s̲e̲
-✔ [9022/9025] Built A245995.Main (23s)
-✔ [9023/9025] Built A245995.Values (22s)
-✔ [9024/9025] Built A245995 (21s)
+✔ [9022/9025] Built A245995.Main (7.4s)
+✔ [9023/9025] Built A245995.Values (6.2s)
+✔ [9024/9025] Built A245995 (4.5s)
 Build completed successfully (9025 jobs).
