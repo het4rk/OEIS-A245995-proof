@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite it as below."
+title: "A proof of Hardin's empirical column recurrences for OEIS A245995, formalized in Lean 4"
+authors:
+  - family-names: Shah
+    given-names: Hetark
+notes: "AI-assisted by Grok"
+date-released: 2026-10-12
+version: "1.0"
+license: Apache-2.0
+repository-code: "https://github.com/het4rk/OEIS-A245995-proof"
